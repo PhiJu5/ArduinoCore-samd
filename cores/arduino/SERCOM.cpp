@@ -171,7 +171,7 @@ bool SERCOM::isDataRegisterEmptyUART()
   return sercom->USART.INTFLAG.bit.DRE;
 }
 
-uint8_t SERCOM::readDataUART()
+uint16_t SERCOM::readDataUART()
 {
   return sercom->USART.DATA.bit.DATA;
 }
@@ -183,6 +183,16 @@ int SERCOM::writeDataUART(uint8_t data)
 
   //Put data into DATA register
   sercom->USART.DATA.reg = (uint16_t)data;
+  return 1;
+}
+
+int SERCOM::writeDataUART9bit(uint8_t data)
+{
+  // Wait for data register to be empty
+  while(!isDataRegisterEmptyUART());
+
+  //Put data into DATA register
+  sercom->USART.DATA.reg = (((uint16_t)data) + 0x100);
   return 1;
 }
 
@@ -738,4 +748,22 @@ void SERCOM::initClockNVIC( void )
   {
     /* Wait for synchronization */
   }
+}
+
+void SERCOM::set_tx_mode(void)
+{	
+  while(sercom->USART.SYNCBUSY.bit.CTRLB);          // Wait for SYNCBUSY.CTRLB to clear
+  sercom->USART.CTRLB.bit.RXEN = 0x0;
+  while(sercom->USART.SYNCBUSY.bit.CTRLB);          // Wait for SYNCBUSY.CTRLB to clear
+  sercom->USART.CTRLB.bit.TXEN = 0x1;
+  while(sercom->USART.SYNCBUSY.bit.CTRLB);          // Wait for synchronization
+}
+
+void SERCOM::set_rx_mode(void)
+{	
+  while(sercom->USART.SYNCBUSY.bit.CTRLB);          // Wait for SYNCBUSY.CTRLB to clear
+  sercom->USART.CTRLB.bit.TXEN = 0x0;
+  while(sercom->USART.SYNCBUSY.bit.CTRLB);          // Wait for SYNCBUSY.CTRLB to clear
+  sercom->USART.CTRLB.bit.RXEN = 0x1;
+  while(sercom->USART.SYNCBUSY.bit.CTRLB);          // Wait for synchronization
 }

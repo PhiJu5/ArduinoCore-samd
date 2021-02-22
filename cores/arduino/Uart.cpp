@@ -110,9 +110,13 @@ void Uart::IrqHandler()
 
   if (sercom->isDataRegisterEmptyUART()) {
     if (txBuffer.available()) {
-      uint8_t data = txBuffer.read_char();
+	  uint16_t data = txBuffer.read_char();
+	  if (data & 0x100) {
+		  sercom->writeDataUART9bit((uint8_t)(data & 0xFF));
+	  } else {
+	      sercom->writeDataUART((uint8_t)(data & 0xFF));
+	  }	  
 
-      sercom->writeDataUART(data);
     } else {
       sercom->disableDataRegisterEmptyInterruptUART();
     }
@@ -155,10 +159,14 @@ int Uart::read()
   return c;
 }
 
-size_t Uart::write(const uint8_t data)
+size_t Uart::xwrite(const uint8_t data, const bool bit9)
 {
   if (sercom->isDataRegisterEmptyUART() && txBuffer.available() == 0) {
+    if (bit9) {
+      sercom->writeDataUART9bit(data);
+    } else {
     sercom->writeDataUART(data);
+    }
   } else {
     // spin lock until a spot opens up in the buffer
     while(txBuffer.isFull()) {
@@ -182,12 +190,21 @@ size_t Uart::write(const uint8_t data)
       }
     }
 
-    txBuffer.store_char(data);
+    if (bit9) {
+      txBuffer.store_char((uint16_t)data + 0x100);
+    } else {
+      txBuffer.store_char(data);
+    }
 
     sercom->enableDataRegisterEmptyInterruptUART();
   }
 
   return 1;
+}
+
+size_t Uart::write(const uint8_t data)
+{
+  return xwrite(data, false);
 }
 
 SercomNumberStopBit Uart::extractNbStopBit(uint16_t config)
@@ -216,6 +233,9 @@ SercomUartCharSize Uart::extractCharSize(uint16_t config)
     case SERIAL_DATA_7:
       return UART_CHAR_SIZE_7_BITS;
 
+	case SERIAL_DATA_9:
+      return UART_CHAR_SIZE_9_BITS;
+
     case SERIAL_DATA_8:
     default:
       return UART_CHAR_SIZE_8_BITS;
@@ -237,4 +257,18 @@ SercomParityMode Uart::extractParity(uint16_t config)
     case SERIAL_PARITY_ODD:
       return SERCOM_ODD_PARITY;
   }
+}
+
+void Uart::set_tx_mode(void)
+{
+	sercom->set_tx_mode();
+	txBuffer.clear();
+	rxBuffer.clear();
+}
+
+void Uart::set_rx_mode(void)
+{	
+   sercom->set_rx_mode();
+   txBuffer.clear();
+   rxBuffer.clear();
 }

@@ -31,7 +31,7 @@ class SafeRingBufferN : public RingBufferN<N>
 {
   public:
     int read_char();
-    void store_char( uint8_t c ) ;
+    void store_char( uint16_t c ) ;
 };
 
 typedef SafeRingBufferN<SERIAL_BUFFER_SIZE> SafeRingBuffer;
@@ -44,7 +44,7 @@ int SafeRingBufferN<N>::read_char() {
 }
 
 template <int N>
-void SafeRingBufferN<N>::store_char(uint8_t c) {
+void SafeRingBufferN<N>::store_char(uint16_t c) {
   synchronized {
     RingBufferN<N>::store_char(c);
   }

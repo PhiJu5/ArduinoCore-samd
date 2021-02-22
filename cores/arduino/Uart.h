@@ -38,6 +38,9 @@ class Uart : public HardwareSerial
     int read();
     void flush();
     size_t write(const uint8_t data);
+    size_t write9bit(const uint8_t data) { return xwrite(data, true); };
+    void set_tx_mode(void);
+    void set_rx_mode(void);
     using Print::write; // pull in write(str) and write(buf, size) from Print
 
     void IrqHandler();
@@ -45,6 +48,7 @@ class Uart : public HardwareSerial
     operator bool() { return true; }
 
   private:
+    size_t xwrite(const uint8_t data, const bool bit9);
     SERCOM *sercom;
     SafeRingBuffer rxBuffer;
     SafeRingBuffer txBuffer;
