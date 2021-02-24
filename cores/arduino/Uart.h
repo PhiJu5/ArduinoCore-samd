@@ -22,7 +22,7 @@
 #include "SERCOM.h"
 #include "SafeRingBuffer.h"
 
-#define SERIAL_BUFFER_SIZE  64
+#define SERIAL_BUFFER_SIZE  256
 
 class Uart : public HardwareSerial
 {

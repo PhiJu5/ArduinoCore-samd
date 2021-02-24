@@ -38,9 +38,11 @@ typedef SafeRingBufferN<SERIAL_BUFFER_SIZE> SafeRingBuffer;
 
 template <int N>
 int SafeRingBufferN<N>::read_char() {
+  int ret = 0;
   synchronized {
-    return RingBufferN<N>::read_char();
+    ret = RingBufferN<N>::read_char();
   }
+   return ret;
 }
 
 template <int N>
